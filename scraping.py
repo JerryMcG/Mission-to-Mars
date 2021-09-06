@@ -8,7 +8,8 @@ import datetime as dt
 def scrape_all():
     # Initiate headless driver for deployment
     executable_path = {'executable_path': ChromeDriverManager().install()}
-    browser = Browser('chrome', **executable_path, headless=True)
+    #browser = Browser('chrome', **executable_path, headless=True)
+    browser = Browser('chrome', **executable_path)
 
     #set news title and paragraph variables
     news_title, news_paragraph = mars_news(browser)
@@ -19,7 +20,8 @@ def scrape_all():
       "news_paragraph": news_paragraph,
       "featured_image": featured_image(browser),
       "facts": mars_facts(),
-      "last_modified": dt.datetime.now()
+      "last_modified": dt.datetime.now(),
+      "hemisphere": hemisphere(browser)
     }
 
     # Stop webdriver and return data
@@ -94,6 +96,43 @@ def mars_facts():
     
     #convert DF to html, add bootstrap
     return df.to_html()
+
+def hemisphere(browser):
+    #navigate to site
+    url = 'https://marshemispheres.com/'
+    browser.visit(url)
+
+    #parse with soup
+    html = browser.html
+    img_soup = soup(html, 'html.parser')
+
+    #list to hold
+    hemisphere_image_urls = []
+    #pull all links
+    links = browser.find_by_css('a.product-item img')
+
+    for x in range(4):
+        #dict to hold output
+        hemisphere = {}
+    
+        #click on link
+        browser.find_by_css('a.product-item img')[x].click()
+        
+        #find jpg image
+        sample = browser.links.find_by_text('Sample')
+        hemisphere['img_url'] = sample['href']
+    
+        #extract title
+        hemisphere['title'] = browser.find_by_css('h2.title').text
+    
+        #add to list
+        hemisphere_image_urls.append(hemisphere)
+    
+        #back to main page ready for next loop
+        browser.back()
+
+    return hemisphere_image_urls
+
 
 if __name__ == "__main__":
     # If running as script, print scraped data
